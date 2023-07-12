@@ -150,7 +150,7 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
             flaw_image = flaw_image * Scratch_Leftover_mask_image
 
         image += flaw_image
-        image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+        #image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
         
         save_path = save_path + "/" + flaw_type
         os.makedirs(save_path + "/Accept", exist_ok=True)
@@ -164,7 +164,7 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
         diff = np.where(flaw_image != 0, 255, 0)
         cv2.imwrite(save_path + "/Diff/" + image_name.replace(".png", "_diff.png"), diff, [cv2.IMWRITE_PNG_COMPRESSION, 0])
         #원본이미지
-        origin_image = cv2.normalize(origin_image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+        #origin_image = cv2.normalize(origin_image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
         cv2.imwrite(save_path + "/Accept/" + image_name, origin_image, [cv2.IMWRITE_PNG_COMPRESSION, 0])
         
     except:
