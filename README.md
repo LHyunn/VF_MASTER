@@ -1,6 +1,6 @@
 # VF Generator On NDT images for welded pipes
 
-VF Generator is a tool for generating virtual defects on non-destructive testing (NDT) images of welded pipes. It allows you to overlay various types of defects on the images. Please note that I do not have ownership of the data used for the research, so I cannot publicly share the images. 
+VF Generator is a tool for generating virtual defects on non-destructive testing (NDT) images of welded pipes. It allows you to overlay various types of defects on the images. Please note that I do not have ownership of the data used for the research, so I cannot publicly share the images. This README has been translated using ChatGPT.
 
 >Currently supported types of defects: IP, PO, Scratch, Leftover, CT
 
