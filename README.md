@@ -127,7 +127,7 @@ python vf_generator.py --data_path <입력 이미지 경로> --save_path <결과
 
 생성된 결함 이미지는 지정한 save_path 디렉토리에 하위 디렉토리로 결함 종류에 따라 정리되어 저장됩니다 (Accept, Reject, Diff). 
 
-### 참고문헌
+## 참고문헌
 
 이미지 인페인팅 기법 : https://github.com/advimman/lama
 
