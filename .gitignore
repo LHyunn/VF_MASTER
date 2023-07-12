@@ -1,0 +1,4 @@
+*.png
+RT_Project/log/*
+src/Inpaint/lama/*
+Data/*
