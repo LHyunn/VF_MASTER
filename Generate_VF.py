@@ -203,9 +203,11 @@ if __name__ == "__main__":
     image_list = glob(args.data_path + "/*.png")
     print("image_list : ", len(image_list))
     print("flaw_type : ", args.flaw_type)
-    PO_list = glob(os.path.dirname(__file__) + "/Extracted_Flaw/PO/*.npy")
-    Scratch_list = glob(os.path.dirname(__file__) + "/Extracted_Flaw/Scratch/*.npy")
-    Leftover_list = glob(os.path.dirname(__file__) + "/Extracted_Flaw/Leftover/*.npy")
-    CT_list = glob(os.path.dirname(__file__) + "/Extracted_Flaw/CT/*.npy")
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    PO_list = glob(os.path.join(current_dir, "Extracted_Flaw", "PO", "*.npy"))
+    Scratch_list = glob(os.path.join(current_dir, "Extracted_Flaw", "Scratch", "*.npy"))
+    Leftover_list = glob(os.path.join(current_dir, "Extracted_Flaw", "Leftover", "*.npy"))
+    CT_list = glob(os.path.join(current_dir, "Extracted_Flaw", "CT", "*.npy"))
     
     ray.get([generate_virtual_flaw.remote(image_list[i], padding = args.padding, fade = args.fade, flaw_type = args.flaw_type, save_path = args.save_path, sigma = args.sigma, points = args.points) for i in tqdm(range(len(image_list)))])
