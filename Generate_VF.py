@@ -59,12 +59,17 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
         #세로로 이어붙인다. 임시 이미지에 결함을 합성하고 나중에 다시 잘라내고 PO_IP_mask_image를 곱한다.
         temp_image = np.concatenate([temp_image, PO_IP_mask_image, temp_image,], axis=0)
         flaw_image = np.zeros_like(temp_image)
+        #float32 
+        flaw_image = flaw_image.astype(np.float32)
         y1, y2 = y1 + 1256, y2 + 1256
         
         if flaw_type == "IP":
             try:
                 random_flaw_x = np.random.randint(600, 900)
-                random_flaw = np.ones((4, random_flaw_x)) * 0.6
+                random_flaw = np.ones((4, random_flaw_x)) * 0.5
+                noise = np.random.normal(loc=-0.09, scale=0.3, size=(4, random_flaw_x))
+                random_flaw = random_flaw + noise
+            
                 
                 #image의 랜덤한 위치에 IP를 넣는다.
                 x = np.random.randint(0, image.shape[1] - random_flaw.shape[1])
@@ -72,7 +77,7 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
                 
                 flaw_image[y:y+random_flaw.shape[0], x:x+random_flaw.shape[1]] += random_flaw 
                 flaw_image = flaw_image[1256:1256*2, :]
-                flaw_image = flaw_image * PO_IP_mask_image
+                flaw_image = np.multiply(flaw_image, PO_IP_mask_image)
             except Exception as e:
                 print(e)
             
@@ -90,7 +95,7 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
                 flaw_image[y:y+random_flaw.shape[0], x:x+random_flaw.shape[1]] += random_flaw 
                 
             flaw_image = flaw_image[1256:1256*2, :]
-            flaw_image = flaw_image * PO_IP_mask_image
+            flaw_image = np.multiply(flaw_image, PO_IP_mask_image)
             # 원본이미지와 같은 사이즈의 검정색 이미지 2장을 준비함
             # 1장(flaw_image)은 결함만 두두두두, 1장은 용접부 경계선 스무딩한 것 -> 곱함 -> 용접부 경계선에 있는 결함은 흐려짐
             # 정상이미지에 더함
@@ -106,7 +111,7 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
             flaw_image[y:y+random_flaw.shape[0], x:x+random_flaw.shape[1]] += random_flaw * 1
                 
             flaw_image = flaw_image[1256:1256*2, :]
-            flaw_image = flaw_image * CT_mask_image
+            flaw_image = np.multiply(flaw_image, CT_mask_image)
                 
         elif flaw_type == "Scratch":
             random_try = np.random.randint(2, 3)
@@ -127,7 +132,7 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
                     flaw_image[y:y+random_flaw.shape[0], x:x+random_flaw.shape[1]] += random_flaw * 1.5
                 
             flaw_image = flaw_image[1256:1256*2, :]
-            flaw_image = flaw_image * Scratch_Leftover_mask_image
+            flaw_image = np.multiply(flaw_image, Scratch_Leftover_mask_image)
             
         elif flaw_type == "Leftover":
             random_try = np.random.randint(3, 4)
@@ -147,7 +152,7 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
                     flaw_image[y:y+random_flaw.shape[0], x:x+random_flaw.shape[1]] += random_flaw * 1
             
             flaw_image = flaw_image[1256:1256*2, :]
-            flaw_image = flaw_image * Scratch_Leftover_mask_image
+            flaw_image = np.multiply(flaw_image, Scratch_Leftover_mask_image)
 
         image += flaw_image
         #image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
