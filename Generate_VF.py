@@ -23,20 +23,17 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
     PO_IP_mask_image = np.zeros_like(image) 
     Scratch_Leftover_mask_image = np.ones_like(image)
     CT_mask_image = np.zeros_like(image)
-
-    # 용접부 Detection
-    calc_image = cv2.rotate(calc_image, cv2.ROTATE_90_CLOCKWISE)
-    calc_image = cv2.normalize(calc_image, None, 0, 1000, cv2.NORM_MINMAX, cv2.CV_32F)
-    calc_image = cv2.GaussianBlur(calc_image, (31,31), 0)
-    calc_image = cv2.resize(calc_image, (512, 512))
-    calc_image = np.array(calc_image, dtype=np.float32)
+    
     try:
-        for i in range(9):
-            calc_image = np.split(calc_image, 2, axis=0)
-            calc_image = np.add(calc_image[0], calc_image[1])
-
-        calc_image = np.gradient(np.squeeze(calc_image))
-        y1, y2 = 1256 - int(np.argmax(calc_image)* 1256 / 512), 1256 - int(np.argmin(calc_image)* 1256 / 512)
+        # 이미지를 x축 방향으로 정렬
+        sorted_image_array = np.sort(calc_image, axis=1)
+        # 상위 50퍼센트 범위 계산
+        top_50_percent = int(sorted_image_array.shape[1] * 0.5)
+        # 상위 50퍼센트 범위 내의 값 추출
+        top_50_percent_values = sorted_image_array[: ,top_50_percent:]
+        average_values = np.mean(top_50_percent_values, axis=1)
+        average_values = np.gradient(average_values)
+        y1, y2 = np.argmin(average_values), np.argmax(average_values)
         if y1 < 100 or y2 > 1056:
             raise Exception("y1 or y2 is out of range")
         
