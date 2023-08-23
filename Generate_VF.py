@@ -12,7 +12,7 @@ import elasticdeform
 
 
 @ray.remote
-def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma, points):
+def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma, points, normalize):
     image_name = image_path.split("/")[-1]
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE) # 이미지를 불러옴.
     image = np.float32(image) # 이미지를 float32로 변환. 결함을 합성할 때 정수가 아니라 실수로 계산하고 나중에 uint8로 변환함.
@@ -160,10 +160,18 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
         os.makedirs(save_path + "/Diff", exist_ok=True)
         
         #합성된 이미지
+        image = np.asarray(image, dtype=np.uint8)
+        origin_image = np.asarray(origin_image, dtype=np.uint8)
+        
+        if normalize:
+            image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+            origin_image = cv2.normalize(origin_image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+        
         cv2.imwrite(save_path + "/Reject/" + image_name, image, [cv2.IMWRITE_PNG_COMPRESSION, 0])
-        #차이 이미지. flaw_image에서 0이 아닌 픽셀은 모두 255로 만들어서 저장
+        #차이 이미지. image와 origin_image에서 차이가 나는 부분을 흰색으로 표시
         diff = np.zeros_like(image)
-        diff = np.where(flaw_image != 0, 255, 0)
+        diff = np.abs(image - origin_image)
+        diff = np.where(diff > 0, 255, 0)
         cv2.imwrite(save_path + "/Diff/" + image_name.replace(".png", "_diff.png"), diff, [cv2.IMWRITE_PNG_COMPRESSION, 0])
         #원본이미지
         #origin_image = cv2.normalize(origin_image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
@@ -187,6 +195,7 @@ if __name__ == "__main__":
     parser.add_argument('--CT_margin', type=int, default=50)
     parser.add_argument('--sigma', type=int, default=5)
     parser.add_argument('--points', type=int, default=4)
+    parser.add_argument('--normalize', type=bool, default=False)
 
     args = parser.parse_args()
     if args.data_path is None:
@@ -212,4 +221,4 @@ if __name__ == "__main__":
     Leftover_list = glob(os.path.join(current_dir, "Extracted_Flaw", "Leftover", "*.npy"))
     CT_list = glob(os.path.join(current_dir, "Extracted_Flaw", "CT", "*.npy"))
     
-    ray.get([generate_virtual_flaw.remote(image_list[i], padding = args.padding, fade = args.fade, flaw_type = args.flaw_type, save_path = args.save_path, sigma = args.sigma, points = args.points) for i in tqdm(range(len(image_list)))])
+    ray.get([generate_virtual_flaw.remote(image_list[i], padding = args.padding, fade = args.fade, flaw_type = args.flaw_type, save_path = args.save_path, sigma = args.sigma, points = args.points, normalize = args.normalize) for i in tqdm(range(len(image_list)))])
