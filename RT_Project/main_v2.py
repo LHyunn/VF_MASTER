@@ -30,28 +30,6 @@ def main(**kwargs):
                         metrics=[tf.keras.metrics.BinaryAccuracy(),tf.keras.metrics.FalseNegatives(),tf.keras.metrics.FalsePositives(),tf.keras.metrics.TrueNegatives(),tf.keras.metrics.TruePositives()])
             history = model.fit(train_ds, validation_data=val_ds, epochs=EPOCHS, class_weight=kwargs["class_weight"], callbacks=get_callbacks(kwargs["model_type"], model_dir, log_dir), verbose=1)
             draw_learning_curve(history, result_dir, DATA_PATH, kwargs["date"])
-            
-        
-        
-    
-    
-    
-    #모델 평가.
-    model = tf.keras.models.load_model(model_dir + f"/{kwargs['model_type']}.h5")
-    #model.summary()
-    test_pred = model.predict(test_image_list)
-    #threading.Thread(target=generate_report, args=(test_pred, test_image_label, test_image, result_dir), kwargs={"upload": True}).start()
-    generate_report(test_pred, test_image_label, test_image, result_dir, upload=True)
-
-
-    
-    
-    
-    
-    
-    
-    
-    
     
     
 if __name__ == "__main__":
@@ -83,9 +61,5 @@ if __name__ == "__main__":
                                     "date": DATE,
                                 }
                                 main(**kwargs)
-                                #학습 종료.
-                                #학습 결과 저장.
-                                #학습 결과 그래프로 출력.
-                                #학습 결과 테스트 데이터로 평가.
                                 
 

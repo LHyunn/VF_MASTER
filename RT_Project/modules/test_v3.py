@@ -16,9 +16,13 @@ import tensorflow_addons as tfa
 import shutil
 import requests
 import json
+import sys
+#현재 파일의 상위 폴더의 상위 폴더를 import하기 위한 코드
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
+from config import *
 
 def load_test(path):
-    test_image = glob(path + "/**/*.jpg")
+    test_image = glob(path + "/**/*.png")
     test_image_label = [int(i.split("/")[-2]) for i in test_image]
     test_image_list = []
     for i in test_image:
@@ -75,13 +79,13 @@ class TestModel:
             self.test_image_list = test_image_list
             self.test_image_label = test_image_label
             self.test_image = test_image
-        self.model_list = glob(f"/home/VirtualFlaw/RT_Project/log/{self.DATE}/**/*.h5", recursive=True)
+        self.model_list = glob(f"{LOG_DIR}/{self.DATE}/**/*.h5", recursive=True)
         print("Test loaded. total model count:", len(self.model_list), "total test image count:", len(self.test_image_list))
         self.pred = None
         
         
     def load_test(self):
-        test_image = glob(self.TEST_PATH + "/**/*.jpg")
+        test_image = glob(self.TEST_PATH + "/**/*.png")
         test_image_label = [int(i.split("/")[-2]) for i in test_image]
         test_image_list = []
         for i in test_image:
@@ -325,15 +329,13 @@ class TestModel:
             Accuracy_list.append((report["class 1"]["precision"] * len_0 + report["class 1"]["recall"] * len_1) / (len_0 + len_1))
 
 
-        #recall이 1인 것 중에서 precision이 가장 높은 것을 찾는다.
+        
         df = pd.DataFrame({"Threshold": Threshold_list, "Precision": Precision_list, "Recall": Recall_list, "F1_score": F1_score_list, "Accuracy": Accuracy_list})
         df.to_csv(result_path + f"/threshold_recall_1.csv", index=False)
-        try:
-            df = df[df["Recall"] == 1]
-            #마지막 행이 가장 높은 precision을 가지는 행이다.
-            max_F1_score_Threshold, f1_score_, recall_, precision_, accuracy_ = df.iloc[-1]
-        except:
-            max_F1_score_Threshold, f1_score_, recall_, precision_, accuracy_ = -1, -1, -1, -1, -1
+        #F1score 기준으로 정렬
+        df = df.sort_values(by=["F1_score"], ascending=False)
+        return df.iloc[0]["Threshold"], df.iloc[0]["F1_score"], df.iloc[0]["Recall"], df.iloc[0]["Precision"], df.iloc[0]["Accuracy"]
+            
     
         
         plt.figure(figsize=(10, 10))

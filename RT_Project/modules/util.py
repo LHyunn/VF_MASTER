@@ -12,7 +12,8 @@ from sklearn.metrics import *
 import json
 import requests
 import sys
-sys.path.append("/home/VirtualFlaw/RT_Project")
+#현재 파일의 상위 폴더의 상위 폴더를 import하기 위한 코드
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
 from config import *
 import time
 
@@ -33,8 +34,8 @@ def load_test(data_path, target_size):
 def load_train(data_path, data_type, target_size, batch_size):
     path = os.path.join(data_path, data_type)
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-        os.path.join(path, "Train"),
-        validation_split=0.2,
+        os.path.join(path, "train"),
+        validation_split=0.3,
         subset="training",
         seed=123,
         image_size=(target_size[0], target_size[1]),
@@ -44,8 +45,8 @@ def load_train(data_path, data_type, target_size, batch_size):
     )
 
     val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-        os.path.join(path, "Train"),
-        validation_split=0.2,
+        os.path.join(path, "train"),
+        validation_split=0.3,
         subset="validation",
         seed=123,
         image_size=(target_size[0], target_size[1]),
@@ -73,12 +74,12 @@ def init_train(**kwargs):
         loss_func = "focal_loss"
     class_weight = kwargs["class_weight"]
     class_weight_ = str(class_weight).replace("{", "(").replace("}", ")")
-    os.makedirs(f"/home/VirtualFlaw/RT_Project/log/{date}/{data}/{model_type}/{target_size}_{batch_size}_{learning_rate}_{loss_func}_{class_weight_}/models", exist_ok=True)
-    model_dir = f"/home/VirtualFlaw/RT_Project/log/{date}/{data}/{model_type}/{target_size}_{batch_size}_{learning_rate}_{loss_func}_{class_weight_}/models"
-    os.makedirs(f"/home/VirtualFlaw/RT_Project/log/{date}/{data}/{model_type}/{target_size}_{batch_size}_{learning_rate}_{loss_func}_{class_weight_}/logs", exist_ok=True)
-    log_dir = f"/home/VirtualFlaw/RT_Project/log/{date}/{data}/{model_type}/{target_size}_{batch_size}_{learning_rate}_{loss_func}_{class_weight_}/logs"
-    os.makedirs(f"/home/VirtualFlaw/RT_Project/log/{date}/{data}/{model_type}/{target_size}_{batch_size}_{learning_rate}_{loss_func}_{class_weight_}/result", exist_ok=True)
-    result_dir = f"/home/VirtualFlaw/RT_Project/log/{date}/{data}/{model_type}/{target_size}_{batch_size}_{learning_rate}_{loss_func}_{class_weight_}/result"
+    os.makedirs(f"{LOG_DIR}/{date}/{data}/{model_type}/{target_size}_{batch_size}_{learning_rate}_{loss_func}_{class_weight_}/models", exist_ok=True)
+    model_dir = f"{LOG_DIR}/{date}/{data}/{model_type}/{target_size}_{batch_size}_{learning_rate}_{loss_func}_{class_weight_}/models"
+    os.makedirs(f"{LOG_DIR}/{date}/{data}/{model_type}/{target_size}_{batch_size}_{learning_rate}_{loss_func}_{class_weight_}/logs", exist_ok=True)
+    log_dir = f"{LOG_DIR}/{date}/{data}/{model_type}/{target_size}_{batch_size}_{learning_rate}_{loss_func}_{class_weight_}/logs"
+    os.makedirs(f"{LOG_DIR}/{date}/{data}/{model_type}/{target_size}_{batch_size}_{learning_rate}_{loss_func}_{class_weight_}/result", exist_ok=True)
+    result_dir = f"{LOG_DIR}/{date}/{data}/{model_type}/{target_size}_{batch_size}_{learning_rate}_{loss_func}_{class_weight_}/result"
     return model_dir, log_dir, result_dir
 
 def draw_learning_curve(history, result_dir, DATA_PATH, DATE):
@@ -98,8 +99,8 @@ def draw_learning_curve(history, result_dir, DATA_PATH, DATE):
     plt.tight_layout()
     plt.savefig(os.path.join(result_dir, "learning_curve.png"), dpi=500)
     plt.close()
-    shutil.copy(DATA_PATH + "/Dataset_Info/Dataset_Info.txt", result_dir)
-    os.rename(result_dir +"/Dataset_Info.txt", result_dir +"/Dataset_Info_" + DATE + ".txt")
+    #shutil.copy(DATA_PATH + "/Dataset_Info/Dataset_Info.txt", result_dir)
+    #os.rename(result_dir +"/Dataset_Info.txt", result_dir +"/Dataset_Info_" + DATE + ".txt")
     #learningrate 그래프
     plt.figure(figsize=(12, 4))
     plt.plot(history.history["lr"], label="lr")
