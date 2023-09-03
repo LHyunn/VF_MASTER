@@ -4,4 +4,3 @@ src/Inpaint/lama/*
 Data/*
 *.pyc
 
-RT_Project/__pycache__/config.cpython-38.pyc

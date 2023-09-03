@@ -54,8 +54,6 @@ class CNN(BaseModel):
                 tf.keras.layers.Flatten(),
                 tf.keras.layers.Dense(4096, activation="gelu"),
                 tf.keras.layers.Dropout(0.5),
-                tf.keras.layers.Dense(4096, activation="gelu"),
-                tf.keras.layers.Dropout(0.5),
                 tf.keras.layers.Dense(1, activation=sigmoid_3x),
             ])
         return model

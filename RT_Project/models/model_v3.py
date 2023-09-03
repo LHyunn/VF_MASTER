@@ -40,24 +40,42 @@ class CNN(BaseModel):
                         self.target_size[2],
                     ),
                 ),
-                Conv2D(16, (3, 3), activation="relu"),
+                Conv2D(63, (3, 3), activation="relu"),
                 MaxPool2D(2, 2),
-                Conv2D(32, (3, 3), activation="relu"),
+                Conv2D(63, (3, 3), activation="relu"),
                 MaxPool2D(2, 2),
-                Conv2D(64, (3, 3), activation="relu"),
+                Conv2D(63, (3, 3), activation="relu"),
                 MaxPool2D(2, 2),
-                Conv2D(64, (3, 3), activation="relu"),
-                MaxPool2D(2, 2),
-                Conv2D(64, (3, 3), activation="relu"),
-                MaxPool2D(2, 2),
-                Conv2D(16, (3, 3), activation="relu"),
-                #BatchNormalization(),
-                GlobalAveragePooling2D(),
                 Flatten(),
-                Dense(4096, activation="relu"),
+                Dense(1611, activation="relu"),
                 Dropout(0.5),
-                Dense(4096, activation="relu"),
-                Dropout(0.5),
+                Dense(1, activation="sigmoid"),
+            ])
+        return model
+    
+class CNN3(BaseModel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+    def get_model(self):
+        model = tf.keras.models.Sequential([
+                Rescaling(
+                    1.0 / 255,
+                    input_shape=(
+                        self.target_size[0],
+                        self.target_size[1],
+                        self.target_size[2],
+                    ),
+                ),
+                Conv2D(96, (3, 3), activation="relu"),
+                MaxPool2D(2, 2),
+                Conv2D(96, (3, 3), activation="relu"),
+                MaxPool2D(2, 2),
+                Conv2D(64, (3, 3), activation="relu"),
+                MaxPool2D(2, 2),
+                Flatten(),
+                Dense(2048, activation="relu"),
+                Dropout(0.3),
                 Dense(1, activation="sigmoid"),
             ])
         return model
@@ -443,6 +461,8 @@ def get_model(model_name):
         return NASNetLarge().get_model()
     elif model_name == 'CNN2':
         return CNN2().get_model()
+    elif model_name == 'CNN3':
+        return CNN3().get_model()
     else:
         raise ValueError('Invalid model name: ', model_name)
         

@@ -1,6 +1,6 @@
 import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-#os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import warnings
 warnings.filterwarnings("ignore")
 import pandas as pd
@@ -13,25 +13,27 @@ import seaborn as sns
 from sklearn.metrics import *
 #tfa focal loss
 import tensorflow_addons as tfa
+import tensorflow.keras.backend as K
 import shutil
 import requests
 import json
 import sys
+from natsort import natsorted
 #현재 파일의 상위 폴더의 상위 폴더를 import하기 위한 코드
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
 from config import *
 
-def load_test(path):
-    test_image = glob(path + "/**/*.png")
+def load_test(data_path, target_size):
+    test_image = glob(data_path + "/**/*.png")
     test_image_label = [int(i.split("/")[-2]) for i in test_image]
     test_image_list = []
     for i in test_image:
-        img = cv2.imread(i, cv2.IMREAD_GRAYSCALE)
-        img = cv2.resize(img, (512, 512))
+        img = cv2.imread(i, (cv2.IMREAD_GRAYSCALE if target_size[2] == 1 else cv2.IMREAD_COLOR))
+        img = cv2.resize(img, (target_size[0], target_size[1]))
         test_image_list.append(img)
     test_image_list = np.array(test_image_list)
-    test_image_list = test_image_list.reshape(-1, 512, 512, 1)
-    return test_image_list, test_image_label, test_image    
+    test_image_list = test_image_list.reshape(-1, target_size[0], target_size[1], target_size[2])
+    return test_image_list, test_image_label, test_image
 
 def f1_m(y_true, y_pred):
     precision = precision_m(y_true, y_pred)
@@ -79,7 +81,7 @@ class TestModel:
             self.test_image_list = test_image_list
             self.test_image_label = test_image_label
             self.test_image = test_image
-        self.model_list = glob(f"{LOG_DIR}/{self.DATE}/**/*.h5", recursive=True)
+        self.model_list = natsorted(glob(f"{LOG_DIR}/{self.DATE}/**/*.h5", recursive=True), reverse=True)
         print("Test loaded. total model count:", len(self.model_list), "total test image count:", len(self.test_image_list))
         self.pred = None
         
@@ -117,8 +119,8 @@ class TestModel:
             df.to_csv(result_path + "/" + "label_pred.csv", index=False)
             self.threshold, f1_score_, recall_, precision_, accuracy_= self.draw_threshold_change_curves(model_name, result_path) # 2. draw threshold change curves and get best threshold
             print("Threshold:", self.threshold) if verbose else None
-            self.draw_roc_curve(self.test_image_label, self.test_pred, model_name, result_path) # 3. draw roc curve
-            self.draw_precision_recall_curve(self.test_image_label, self.test_pred, model_name, result_path) # 4. draw precision recall curve
+            auroc = self.draw_roc_curve(self.test_image_label, self.test_pred, model_name, result_path) # 3. draw roc curve
+            aucpr = self.draw_precision_recall_curve(self.test_image_label, self.test_pred, model_name, result_path) # 4. draw precision recall curve
             self.test_pred = np.where(self.test_pred > self.threshold, 1, 0) # 5. apply threshold
             self.draw_confusion_matrix(self.test_image_label, self.test_pred, model_name, result_path) # 6. draw confusion matrix
             self.write_classification_report(self.test_image_label, self.test_pred, result_path) # 7. write classification report
@@ -133,6 +135,8 @@ class TestModel:
                 "Precision": precision_,
                 "Batch Size": Batch_Size,
                 "F1 Score": f1_score_,
+                "AUROC": auroc,
+                "AUCPR": aucpr,
                 "Model": model_name,
                 "실행 일시": self.DATE_,
                 "Class Weight": Class_Weight,
@@ -262,6 +266,14 @@ class TestModel:
                             }
                         ]
                     },
+                    "AUROC": {
+                        "type": "number",
+                        "number": round(page_values["AUROC"], 4)
+                    },
+                    "AUCPR": {
+                        "type": "number",
+                        "number": round(page_values["AUCPR"], 4)
+                    },
                     "Threshold": {
                         "type": "number",
                         "number": page_values["Threshold"]
@@ -290,6 +302,7 @@ class TestModel:
         plt.title(f'Receiver operating characteristic - threshold : {self.threshold}' + model_name)
         plt.legend(loc="lower right")
         plt.savefig(result_path + f"/roc_curve.png", dpi=500)
+        return roc_auc
         
     def draw_confusion_matrix(self, test_image_label, test_pred, model_name, result_path):
         cm = confusion_matrix(test_image_label, test_pred)
@@ -302,6 +315,8 @@ class TestModel:
         
     def draw_precision_recall_curve(self, test_image_label, test_pred, model_name, result_path):
         precision, recall, thresholds = precision_recall_curve(test_image_label, test_pred)
+        #AUCPR
+        aucpr = auc(recall, precision)
         plt.figure(figsize=(10, 10))
         plt.plot(recall, precision, label='Precision-Recall curve - ')
         plt.xlabel('Recall')
@@ -309,6 +324,7 @@ class TestModel:
         plt.title(f'Precision-Recall curve - threshold : {self.threshold}' + model_name)
         plt.legend(loc="lower right")
         plt.savefig(result_path + f"/precision_recall_curve.png", dpi=500)
+        return aucpr
         
     def draw_threshold_change_curves(self, model_name, result_path):
         Threshold_list = []
@@ -334,9 +350,7 @@ class TestModel:
         df.to_csv(result_path + f"/threshold_recall_1.csv", index=False)
         #F1score 기준으로 정렬
         df = df.sort_values(by=["F1_score"], ascending=False)
-        return df.iloc[0]["Threshold"], df.iloc[0]["F1_score"], df.iloc[0]["Recall"], df.iloc[0]["Precision"], df.iloc[0]["Accuracy"]
-            
-    
+        
         
         plt.figure(figsize=(10, 10))
         plt.subplot(2, 2, 1)
@@ -357,7 +371,8 @@ class TestModel:
         plt.ylabel('Accuracy')
         plt.suptitle('Threshold - ' + model_name)
         plt.savefig(result_path + f"/threshold.png", dpi=500)
-        return max_F1_score_Threshold, f1_score_, recall_, precision_, accuracy_
+        return df.iloc[0]["Threshold"], df.iloc[0]["F1_score"], df.iloc[0]["Recall"], df.iloc[0]["Precision"], df.iloc[0]["Accuracy"]
+    
   
     def write_classification_report(self, test_image_label, test_pred, result_path):
         with open(result_path + f"/classification_report.txt", "w") as f:

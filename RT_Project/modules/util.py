@@ -12,15 +12,27 @@ from sklearn.metrics import *
 import json
 import requests
 import sys
+from tqdm import tqdm
 #현재 파일의 상위 폴더의 상위 폴더를 import하기 위한 코드
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
 from config import *
 import time
+from modules.test_v3 import *
+class TestCallback(tf.keras.callbacks.Callback):
+    def __init__(self, model, test_image_list, test_image_label, test_image, result_dir):
+        super(TestCallback, self).__init__()
+        self.model = model
+        self.test_image_list = test_image_list
+        self.test_image_label = test_image_label
+        self.test_image = test_image
+        self.result_dir = result_dir
 
-
-
+    def on_epoch_end(self, epoch, logs=None):
+        test_pred = self.model.predict(self.test_image_list)
+        generate_report(test_pred, self.test_image_label, self.test_image, self.result_dir, upload=True)
+        
 def load_test(data_path, target_size):
-    test_image = glob(data_path + "/**/*.jpg")
+    test_image = glob(data_path + "/**/*.png")
     test_image_label = [int(i.split("/")[-2]) for i in test_image]
     test_image_list = []
     for i in test_image:
@@ -109,12 +121,14 @@ def draw_learning_curve(history, result_dir, DATA_PATH, DATE):
     plt.legend(loc="lower right")
     plt.tight_layout()
     plt.savefig(os.path.join(result_dir, "learning_rate.png"), dpi=500)
+
+
     
 def get_callbacks(model_type, model_dir, log_dir):
     reduce_lr = ReduceLROnPlateau(
         monitor="val_loss",
         factor=0.999,
-        patience=16,
+        patience=8,
         verbose=0,
         min_delta=1e-4,
         min_lr=1e-7,
@@ -122,25 +136,24 @@ def get_callbacks(model_type, model_dir, log_dir):
     )
 
     checkpoint = ModelCheckpoint(
-        f"{model_dir}/{model_type}.h5",
-        monitor="val_loss",
+        filepath=f"{model_dir}/{model_type}_" + "{epoch:02d}.h5",
         verbose=2,
-        save_best_only=True,
-        mode="auto",
-
+        save_best_only=False,
+        save_freq="epoch",
     )
 
     early_stopping = EarlyStopping(
-        monitor="val_loss", verbose=0, mode="auto",
-        patience=48,
+        monitor="val_loss",
+        verbose=0,
+        mode="auto",
+        patience=16,
     )
 
     csv_logger = CSVLogger(
         f"{log_dir}/{model_type}.csv",
         append=True,
     )
-    
-    
+
     return [reduce_lr, checkpoint, early_stopping, csv_logger]
 
 def generate_report(test_pred, test_label, test_image, result_dir, upload=False):
@@ -154,15 +167,17 @@ def generate_report(test_pred, test_label, test_image, result_dir, upload=False)
     Recall_list = []
     F1_score_list = []
     Accuracy_list = []
-    for i in range(0, 10000):
-        Threshold = i/10000
+    len_0 = test_label.count(0)
+    len_1 = test_label.count(1)
+    for i in range(0, 100):
+        Threshold = i/100
         Threshold_list.append(Threshold)
         test_pred_clip = np.where(test_pred > Threshold, 1, 0)
         report = classification_report(test_label, test_pred_clip, labels=[0, 1], target_names=["class 0", "class 1"], digits=4, zero_division=0, output_dict=True)
         F1_score_list.append(report["class 1"]["f1-score"])
         Recall_list.append(report["class 1"]["recall"])
         Precision_list.append(report["class 1"]["precision"])
-        Accuracy_list.append((report["class 1"]["precision"] * 400 + report["class 1"]["recall"] * 45) / (400 + 45))
+        Accuracy_list.append((report["class 1"]["precision"] * len_0 + report["class 1"]["recall"] * len_1) / (len_0 + len_1))
     df_origin = pd.DataFrame({"Threshold": Threshold_list, "Precision": Precision_list, "Recall": Recall_list, "F1_score": F1_score_list, "Accuracy": Accuracy_list})
     #f1 score가 가장 높은 행의 값들을 리턴
     df = df_origin[df_origin["F1_score"] == df_origin["F1_score"].max()]
@@ -173,9 +188,11 @@ def generate_report(test_pred, test_label, test_image, result_dir, upload=False)
     test_pred = np.where(test_pred > threshold, 1, 0)
     draw_confusion_matrix(test_label, test_pred, result_dir, threshold)
     write_classification_report(test_label, test_pred, result_dir)
-    #csv 파일 경로
     path = result_dir + "/label_pred.csv"
     upload_notion(threshold, precision, recall, f1, accuracy, path, NOTION_DATABASE_ID_FS) if upload else None
+    #csv 파일 경로
+    """
+    
     
     shutil.rmtree(f"{result_dir}/False", ignore_errors=True)
     os.makedirs(f"{result_dir}/False", exist_ok=True)
@@ -188,9 +205,12 @@ def generate_report(test_pred, test_label, test_image, result_dir, upload=False)
     #recall이 1인 행의 값들을 리턴
     df = df_origin[df_origin["Recall"] == df_origin["Recall"].max()]
     threshold, precision, recall, f1, accuracy = df.iloc[-1]
-    end_time = time.time()
-    print(f"Report generated in {end_time - start_time:.2f} seconds.")
     upload_notion(threshold, precision, recall, f1, accuracy, path, NOTION_DATABASE_ID_RC) if upload else None    
+    """
+    end_time = time.time()
+    #print(f"Report generated in {end_time - start_time:.2f} seconds.")
+    print("F1 score : ", f1)
+    return f1
     
    
 def upload_notion(threshold, precision, recall, f1, accuracy, path, notion_database_id):

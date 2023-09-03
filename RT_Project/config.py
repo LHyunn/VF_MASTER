@@ -11,10 +11,10 @@ DATE = datetime.datetime.now().strftime("%Y%m%d%H%M")
 
 #모델 설정
 #MODEL = ["CNN", "VGG16", "ResNet50", "InceptionV3", "InceptionResNetV2", "MobileNetV2", "DenseNet121", "Xception", "EfficientNetB0", "NASNetMobile", "NASNetLarge"]
-MODEL = ["CNN",]
+MODEL = ["CNN3"]
 LOSS_FUNC = ["binary_crossentropy"]
 LEARNING_RATE = [0.0005]
-WEIGHT = [{0: 1, 1: 1}]
+WEIGHT = [{0: 1, 1: 3}]
 OPTIMIZER = ["Adam"]
 WEIGHT_DECAY = [0.0001]
 MOMENTUM = [0.9]
@@ -22,9 +22,9 @@ MOMENTUM = [0.9]
 
 #데이터 설정
 DATA = ["PO"]
-TARGET_SIZE = [(1024, 1024, 1)]
-BATCH_SIZE = [64, 128, 256]
-EPOCHS = 300
+TARGET_SIZE = [(512, 512, 1)]
+BATCH_SIZE = [128]
+EPOCHS = 100
 #
 
 #데이터 경로 설정

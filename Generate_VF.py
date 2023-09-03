@@ -77,9 +77,9 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
                 flaw_image = np.multiply(flaw_image, PO_IP_mask_image)
             except Exception as e:
                 print(e)
-            
+           
         elif flaw_type == "PO":
-            random_try = np.random.randint(3, 6)
+            random_try = np.random.randint(1, 2)
             for _ in range(random_try):
                 random_flaw = np.random.choice(PO_list)
                 random_flaw = np.load(random_flaw)
