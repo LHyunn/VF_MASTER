@@ -128,10 +128,10 @@ def get_callbacks(model_type, model_dir, log_dir):
     reduce_lr = ReduceLROnPlateau(
         monitor="val_loss",
         factor=0.999,
-        patience=8,
+        patience=20,
         verbose=0,
         min_delta=1e-4,
-        min_lr=1e-7,
+        min_lr=1e-9,
         mode="auto",
     )
 
@@ -146,7 +146,7 @@ def get_callbacks(model_type, model_dir, log_dir):
         monitor="val_loss",
         verbose=0,
         mode="auto",
-        patience=16,
+        patience=30,
     )
 
     csv_logger = CSVLogger(

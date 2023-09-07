@@ -3,7 +3,7 @@ import datetime
 #모드
 MODE = "train"
 #
-
+MODEL_PATH = ""
 #날짜 설정
 DATE = datetime.datetime.now().strftime("%Y%m%d%H%M")
 #DATE = "202305130626"
@@ -11,12 +11,12 @@ DATE = datetime.datetime.now().strftime("%Y%m%d%H%M")
 
 #모델 설정
 #MODEL = ["CNN", "VGG16", "ResNet50", "InceptionV3", "InceptionResNetV2", "MobileNetV2", "DenseNet121", "Xception", "EfficientNetB0", "NASNetMobile", "NASNetLarge"]
-MODEL = ["CNN3"]
+MODEL = ["CNN5"]
 LOSS_FUNC = ["binary_crossentropy"]
 LEARNING_RATE = [0.0005]
-WEIGHT = [{0: 1, 1: 3}]
+WEIGHT = [{0: 1, 1: 1}]
 OPTIMIZER = ["Adam"]
-WEIGHT_DECAY = [0.0001]
+WEIGHT_DECAY = [0.00001]
 MOMENTUM = [0.9]
 #
 
@@ -24,12 +24,12 @@ MOMENTUM = [0.9]
 DATA = ["PO"]
 TARGET_SIZE = [(512, 512, 1)]
 BATCH_SIZE = [128]
-EPOCHS = 100
+EPOCHS = 9999
 #
 
 #데이터 경로 설정
 DATA_PATH = "/home/RT_Paper/data"
-TEST_PATH = "/home/RT_Paper/data/PO/test"
+
 #
 
 

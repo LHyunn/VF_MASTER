@@ -67,9 +67,70 @@ class CNN3(BaseModel):
                         self.target_size[2],
                     ),
                 ),
+                #augmentation
+                
                 Conv2D(96, (3, 3), activation="relu"),
                 MaxPool2D(2, 2),
                 Conv2D(96, (3, 3), activation="relu"),
+                MaxPool2D(2, 2),
+                Conv2D(64, (3, 3), activation="relu"),
+                MaxPool2D(2, 2),
+                Flatten(),
+                Dense(2048, activation="relu"),
+                Dropout(0.3),
+                Dense(1, activation="sigmoid"),
+            ])
+        return model
+class CNN5(BaseModel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+    def get_model(self):
+        model = tf.keras.models.Sequential([
+                Rescaling(
+                    1.0 / 255,
+                    input_shape=(
+                        self.target_size[0],
+                        self.target_size[1],
+                        self.target_size[2],
+                    ),
+                ),
+                RandomFlip("horizontal"),
+                RandomRotation(0.1),
+                Conv2D(128, (3, 3), activation="relu"),
+                MaxPool2D(2, 2),
+                Conv2D(128, (3, 3), activation="relu"),
+                MaxPool2D(2, 2),
+                Conv2D(64, (3, 3), activation="relu"),
+                MaxPool2D(2, 2),
+                Flatten(),
+                Dense(2048, activation="relu"),
+                Dropout(0.3),
+                Dense(1, activation="sigmoid"),
+            ])
+        return model
+    
+class CNN4(BaseModel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+    def get_model(self):
+        model = tf.keras.models.Sequential([
+                Rescaling(
+                    1.0 / 255,
+                    input_shape=(
+                        self.target_size[0],
+                        self.target_size[1],
+                        self.target_size[2],
+                    ),
+                ),
+                Conv2D(64, (3, 3), activation="relu"),
+                MaxPool2D(2, 2),
+                Conv2D(64, (3, 3), activation="relu"),
+                MaxPool2D(2, 2),
+                Conv2D(64, (3, 3), activation="relu"),
+                MaxPool2D(2, 2),
+                Conv2D(64, (3, 3), activation="relu"),
                 MaxPool2D(2, 2),
                 Conv2D(64, (3, 3), activation="relu"),
                 MaxPool2D(2, 2),
@@ -463,6 +524,10 @@ def get_model(model_name):
         return CNN2().get_model()
     elif model_name == 'CNN3':
         return CNN3().get_model()
+    elif model_name == 'CNN4':
+        return CNN4().get_model()
+    elif model_name == 'CNN5':
+        return CNN4().get_model()
     else:
         raise ValueError('Invalid model name: ', model_name)
         

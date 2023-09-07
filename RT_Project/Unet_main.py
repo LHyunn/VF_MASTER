@@ -21,14 +21,14 @@ warnings.filterwarnings("ignore")
 from config import *
 
 def main(**kwargs):
-    TRAIN_PATH = '/data/Data/20230901_forMemSeg/PO/Reject/'
-    TRAIN_MASK_PATH = '/data/Data/20230901_forMemSeg/PO/Diff/'
-    FLAW_TYPE = 'PO'
+    TRAIN_PATH = '/home/RT_Paper/data/IP/train/1/'
+    TRAIN_MASK_PATH = '/home/RT_Paper/data/IP/Diff/'
+    FLAW_TYPE = 'IP'
 
     train_ids = os.listdir(TRAIN_PATH)
 
     print(len(train_ids))
-    n_images = 8000
+    n_images = 4000
     train_ids = train_ids[0:n_images]
 
 
@@ -39,6 +39,7 @@ def main(**kwargs):
         path = TRAIN_PATH + id_
         img = cv2.imread(path)
         img = cv2.resize(img, (TARGET_SIZE[0][0], TARGET_SIZE[0][1]))
+        img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX)
         X[n] = img
         mask_path = TRAIN_MASK_PATH + id_.replace(".png", "_diff.png")
         mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
@@ -50,14 +51,14 @@ def main(**kwargs):
     mirrored_strategy = tf.distribute.MirroredStrategy()
     with mirrored_strategy.scope():
         model = Unet().get_model()
-        lr_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(initial_learning_rate=0.0001, first_decay_steps=150, t_mul=2, m_mul=0.9, alpha=0.0, name=None)
+        lr_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(initial_learning_rate=0.00001, first_decay_steps=150, t_mul=2, m_mul=0.9, alpha=0.0, name=None)
         checkpoint = ModelCheckpoint(f'/home/RT_Paper/model/unet_IP.h5', monitor='val_loss', save_best_only=True, mode="auto")
-        early_stop = EarlyStopping(monitor='val_loss', patience=30, mode='min')
-        reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.99, patience=4, mode='min', min_lr=1e-6)
+        early_stop = EarlyStopping(monitor='val_loss', patience=100, mode='min')
+        reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.99, patience=4, mode='min', min_lr=1e-8)
         model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=lr_schedule), loss='binary_focal_crossentropy', metrics=[tf.keras.metrics.BinaryAccuracy(),tf.keras.metrics.FalseNegatives(),tf.keras.metrics.FalsePositives(),tf.keras.metrics.TrueNegatives(),tf.keras.metrics.TruePositives()])
     
-    history = model.fit(X_train, y_train, validation_data=(X_test,y_test), batch_size=8, epochs=100, callbacks=[checkpoint, early_stop, reduce_lr])
-    TEST_PATH = '/home/RT_Paper/data/PO/test/1/'
+    history = model.fit(X_train, y_train, validation_data=(X_test,y_test), batch_size=8, epochs=300, callbacks=[checkpoint, early_stop, reduce_lr])
+    TEST_PATH = '/home/RT_Paper/data/IP/test/1/'
     test_ids = os.listdir(TEST_PATH)
     test_images = np.zeros((len(test_ids), TARGET_SIZE[0][0], TARGET_SIZE[0][1], 3), dtype=np.uint8)
     image_name = []

@@ -9,7 +9,7 @@ import numpy as np
 import ray
 from tqdm import tqdm
 import elasticdeform
-
+ 
 
 @ray.remote
 def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma, points, normalize):
@@ -60,9 +60,17 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
         flaw_image = flaw_image.astype(np.float32)
         y1, y2 = y1 + 1256, y2 + 1256
         
+        save_path = save_path + "/" + flaw_type
+        os.makedirs(save_path + "/Accept", exist_ok=True)
+        os.makedirs(save_path + "/Reject", exist_ok=True)
+        os.makedirs(save_path + "/Diff", exist_ok=True)
+        
+        if flaw_type == "Random":
+            flaw_type = np.random.choice(["IP", "PO", "CT", "Scratch", "Leftover"])
+        
         if flaw_type == "IP":
             try:
-                random_flaw_x = np.random.randint(600, 900)
+                random_flaw_x = np.random.randint(100, 500)
                 random_flaw = np.ones((4, random_flaw_x)) * 0.5
                 noise = np.random.normal(loc=-0.09, scale=0.3, size=(4, random_flaw_x))
                 random_flaw = random_flaw + noise
@@ -154,14 +162,9 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
         image += flaw_image
         #image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
         
-        save_path = save_path + "/" + flaw_type
-        os.makedirs(save_path + "/Accept", exist_ok=True)
-        os.makedirs(save_path + "/Reject", exist_ok=True)
-        os.makedirs(save_path + "/Diff", exist_ok=True)
+        
         
         #합성된 이미지
-        image = np.asarray(image, dtype=np.uint8)
-        origin_image = np.asarray(origin_image, dtype=np.uint8)
         
         if normalize:
             image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)

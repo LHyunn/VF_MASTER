@@ -6,13 +6,14 @@ from config import *
 ########## Notion API ##########
 NOTION_DATABASE_ID = NOTION_DATABASE_ID_FS
 NOTION_KEY = "secret_2nVjIaYGdiJJbz7VpKwF0kqsdbZyqgjgLHPQWfyEXzF"
+TEST_PATH = "/home/RT_Paper/data/ALL/test"
 ################################
 if len(sys.argv) == 3:
     DATE = sys.argv[1]
     DATASET = sys.argv[2]
 else:
-    DATE = "202309030702"
-    DATASET = "PO"
+    DATE = "202309060337"
+    DATASET = "ALL"
 
 if __name__ == "__main__":
     tf.keras.backend.clear_session()

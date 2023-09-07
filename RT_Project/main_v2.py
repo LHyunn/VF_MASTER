@@ -17,41 +17,38 @@ def main(**kwargs):
     with mirrored_strategy.scope():
         if MODE == "train":
             model = get_model(kwargs["model_type"])
-            lr_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(
+            
+        elif MODE == "alpha train":
+            model = tf.keras.models.load_model(kwargs["model_path"])
+            
+        lr_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(
                 initial_learning_rate=kwargs["learning_rate"], 
                 first_decay_steps=150, 
                 t_mul=2, 
-                m_mul=0.9, 
+                m_mul=0.6, 
                 alpha=0.0, 
                 name=None
             )
-            model.compile(
-                optimizer=tf.keras.optimizers.Adam(learning_rate=lr_schedule),
-                loss=kwargs["loss_func"],
-                metrics=[tf.keras.metrics.BinaryAccuracy(),tf.keras.metrics.FalseNegatives(),tf.keras.metrics.FalsePositives(),tf.keras.metrics.TrueNegatives(),tf.keras.metrics.TruePositives()]
-            )
-            
-            # TestCallback 추가
-            #test_callback = TestCallback(model, test_image_list, test_image_label, test_image, result_dir)
-            
-            history = model.fit(
-                train_ds, 
-                validation_data=val_ds, 
-                epochs=EPOCHS, 
-                class_weight=kwargs["class_weight"], 
-                callbacks=get_callbacks(kwargs["model_type"], model_dir, log_dir), #+ [test_callback],  # TestCallback 추가
-                verbose=0, 
-                workers=40, 
-                use_multiprocessing=True
-            )
-            draw_learning_curve(history, result_dir, DATA_PATH, kwargs["date"])
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=lr_schedule),
+            loss=kwargs["loss_func"],
+            metrics=[tf.keras.metrics.BinaryAccuracy(),tf.keras.metrics.FalseNegatives(),tf.keras.metrics.FalsePositives(),tf.keras.metrics.TrueNegatives(),tf.keras.metrics.TruePositives()]
+        )    
+        history = model.fit(
+            train_ds, 
+            validation_data=val_ds, 
+            epochs=EPOCHS, 
+            class_weight=kwargs["class_weight"], 
+            callbacks=get_callbacks(kwargs["model_type"], model_dir, log_dir), #+ [test_callback],  # TestCallback 추가
+            verbose=1, 
+            workers=40, 
+            use_multiprocessing=True
+        )
+        draw_learning_curve(history, result_dir, DATA_PATH, kwargs["date"])
 
 if __name__ == "__main__":
     for target_size in TARGET_SIZE:
         # 시작 전에 공통적으로 사용되는 테스트 데이터 로드.
-        print(f"test data loading...", end="")
-        test_image_list, test_image_label, test_image = load_test(TEST_PATH, target_size)
-        print(f"done")
         
         for data in DATA:
             for batch_size in BATCH_SIZE:
@@ -73,5 +70,6 @@ if __name__ == "__main__":
                                     "loss_func": loss_func,
                                     "class_weight": weight,
                                     "date": DATE,
+                                    "model_path": MODEL_PATH
                                 }
                                 main(**kwargs)

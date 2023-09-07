@@ -1,6 +1,6 @@
 import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+#os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import warnings
 warnings.filterwarnings("ignore")
 import pandas as pd
@@ -11,6 +11,7 @@ from glob import glob
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import *
+from tqdm import tqdm
 #tfa focal loss
 import tensorflow_addons as tfa
 import tensorflow.keras.backend as K
@@ -27,7 +28,7 @@ def load_test(data_path, target_size):
     test_image = glob(data_path + "/**/*.png")
     test_image_label = [int(i.split("/")[-2]) for i in test_image]
     test_image_list = []
-    for i in test_image:
+    for i in tqdm(test_image):
         img = cv2.imread(i, (cv2.IMREAD_GRAYSCALE if target_size[2] == 1 else cv2.IMREAD_COLOR))
         img = cv2.resize(img, (target_size[0], target_size[1]))
         test_image_list.append(img)
@@ -100,6 +101,9 @@ class TestModel:
         
     def test_model(self, verbose=True, upload=True):
         for model in self.model_list:
+            
+            tf.keras.backend.clear_session()
+            
             model_name = model.split("/")[-1].split(".")[0]
             result_path = "/".join(model.split("/")[:-2]) + "/result"
             info = model.split("/")[-3]
@@ -144,7 +148,7 @@ class TestModel:
                 
             }
             self.upload_test_result(page_values) if upload else None
-            
+            """
             shutil.rmtree("/".join(model.split("/")[:-2]) + f"/False", ignore_errors=True)
             os.makedirs("/".join(model.split("/")[:-2]) + f"/False", exist_ok=True)
             
@@ -153,6 +157,7 @@ class TestModel:
                     pass
                 else:
                     shutil.copy(i, "/".join(model.split("/")[:-2]) + "/False")
+                    """
             
             
             
