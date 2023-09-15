@@ -70,9 +70,9 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
         
         if flaw_type == "IP":
             try:
-                random_flaw_x = np.random.randint(100, 500)
-                random_flaw = np.ones((4, random_flaw_x)) * 0.5
-                noise = np.random.normal(loc=-0.09, scale=0.3, size=(4, random_flaw_x))
+                random_flaw_x = np.random.randint(400, 700)
+                random_flaw = np.ones((4, random_flaw_x)) * 0.6
+                noise = np.random.normal(loc=0.29, scale=0.3, size=(4, random_flaw_x))
                 random_flaw = random_flaw + noise
             
                 
@@ -109,7 +109,9 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
             random_flaw = np.random.choice(CT_list)
             random_flaw = np.load(random_flaw)
             random_flaw = np.asarray(random_flaw, dtype=np.float32)
-            random_flaw = elasticdeform.deform_random_grid(random_flaw, sigma=sigma, points=points, order=1)
+            #0 이상의 값은 0으로 만들기
+            random_flaw = np.where(random_flaw > 0, 0, random_flaw)
+            random_flaw = elasticdeform.deform_random_grid(random_flaw, sigma=sigma+3, points=points+3, order=2)
             #flaw_image의 랜덤한 위치에 random_flaw를 넣기
             x = np.random.randint(0, image.shape[1] - random_flaw.shape[1])
             y = np.random.randint(y1-random_flaw.shape[0], y2)
@@ -124,17 +126,17 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
                 random_flaw = np.random.choice(Scratch_list)
                 random_flaw = np.load(random_flaw)
                 random_flaw = np.asarray(random_flaw, dtype=np.float32)
-                random_flaw = elasticdeform.deform_random_grid(random_flaw, sigma=sigma, points=points, order=1)
+                random_flaw = elasticdeform.deform_random_grid(random_flaw, sigma=sigma+3, points=points+3, order=2)
                 #flaw_image의 랜덤한 위치에 random_flaw를 넣기
                 x = np.random.randint(0, image.shape[1] - random_flaw.shape[1])
                 y_top = np.random.randint(y2, y2 + 100)
                 y_bottom = np.random.randint(y1 - 100, y1 )
                 y = np.random.choice([y_top, y_bottom])
                 if y == y_bottom:
-                    flaw_image[y-random_flaw.shape[0]:y, x:x+random_flaw.shape[1]] += random_flaw * 1.5
+                    flaw_image[y-random_flaw.shape[0]:y, x:x+random_flaw.shape[1]] += random_flaw * 0.5
                     
                 elif y == y_top:
-                    flaw_image[y:y+random_flaw.shape[0], x:x+random_flaw.shape[1]] += random_flaw * 1.5
+                    flaw_image[y:y+random_flaw.shape[0], x:x+random_flaw.shape[1]] += random_flaw * 0.5
                 
             flaw_image = flaw_image[1256:1256*2, :]
             flaw_image = np.multiply(flaw_image, Scratch_Leftover_mask_image)
@@ -160,25 +162,28 @@ def generate_virtual_flaw(image_path, padding, fade, flaw_type, save_path, sigma
             flaw_image = np.multiply(flaw_image, Scratch_Leftover_mask_image)
 
         image += flaw_image
+        
+        #origin_image와 image의 차이가 존재하는 부분을 흰색으로 표시
+        diff = np.where(flaw_image != 0, 255, 0)
         #image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
         
         
-        
-        #합성된 이미지
+
         
         if normalize:
             image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
             origin_image = cv2.normalize(origin_image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
         
         cv2.imwrite(save_path + "/Reject/" + image_name, image, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+        #cv2.imwrite("/home/RT_Paper/data/CT/train/1/" + image_name, image, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+        
         #차이 이미지. image와 origin_image에서 차이가 나는 부분을 흰색으로 표시
-        diff = np.zeros_like(image)
-        diff = np.abs(image - origin_image)
-        diff = np.where(diff > 0, 255, 0)
+        
         cv2.imwrite(save_path + "/Diff/" + image_name.replace(".png", "_diff.png"), diff, [cv2.IMWRITE_PNG_COMPRESSION, 0])
         #원본이미지
         #origin_image = cv2.normalize(origin_image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
         cv2.imwrite(save_path + "/Accept/" + image_name, origin_image, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+        #cv2.imwrite("/home/RT_Paper/data/CT/train/0/" + image_name, origin_image, [cv2.IMWRITE_PNG_COMPRESSION, 0])
         
     except:
         pass
@@ -225,3 +230,4 @@ if __name__ == "__main__":
     CT_list = glob(os.path.join(current_dir, "Extracted_Flaw", "CT", "*.npy"))
     
     ray.get([generate_virtual_flaw.remote(image_list[i], padding = args.padding, fade = args.fade, flaw_type = args.flaw_type, save_path = args.save_path, sigma = args.sigma, points = args.points, normalize = args.normalize) for i in tqdm(range(len(image_list)))])
+
