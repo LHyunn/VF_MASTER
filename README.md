@@ -61,9 +61,6 @@ Image inpainting technique: https://github.com/advimman/lama
 
 Elastic Deformation: https://github.com/gvtulder/elasticdeform
 
-## Participating Company
-
-HyundaiRB : http://eng.hyundairb.com
 
 
 
@@ -135,7 +132,4 @@ python vf_generator.py --data_path <입력 이미지 경로> --save_path <결과
 
 Elastic Deformation: https://github.com/gvtulder/elasticdeform
 
-## 참여기업
-
-HyundaiRB : http://eng.hyundairb.com
 
